@@ -1,0 +1,9 @@
+/* 
+ * kmain
+ */
+
+
+void kmain()
+{
+        return;
+}

@@ -9,6 +9,9 @@ assembly_source_files := $(wildcard src/*.asm)
 assembly_object_files := $(patsubst src/%.asm, build/%.o, \
 			 $(assembly_source_files))
 
+c_source_files := $(wildcard src/*.c)
+c_object_files := $(patsubst src/%.c, build/%.o, $(c_source_files))
+
 cc := $(arch)-gcc
 ld := $(arch)-ld
 asm = nasm
@@ -40,7 +43,7 @@ $(img): $(kernel) src/grub.cfg
 	mkdir -p build/fatgrub
 	sudo mount $${loopdir}p1 build/fatgrub
 	# grub2-install
-	cp -r build/imgfiles/* build/fatgrub
+	sudo cp -r build/imgfiles/* build/fatgrub
 	sudo umount build/fatgrub
 	sudo losetup -d $$loopdir
 	
@@ -50,12 +53,17 @@ $(iso): $(kernel) src/grub.cfg
 	cp src/grub.cfg build/isofiles/boot/grub/grub.cfg
 	grub2-mkrescue -o $@ build/isofiles
 
-$(kernel): $(assembly_object_files) src/linker.ld
-	$(ld) -n -T src/linker.ld -o $@ $(assembly_object_files)
+$(kernel): $(assembly_object_files) $(c_object_files) src/linker.ld
+	$(ld) -n -T src/linker.ld -o $@ $(assembly_object_files) \
+		$(c_object_files)
 
 build/%.o: src/%.asm
 	mkdir -p $(@D)
 	$(asm) -felf64 $< -o $@
+
+build/%.o: src/%.c
+	mkdir -p $(@D)
+	$(cc) -c -g $< -o $@
 
 clean:
 	rm -rf build/
