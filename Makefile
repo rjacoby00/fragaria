@@ -2,8 +2,8 @@ SHELL = /bin/bash
 
 arch = x86_64-elf
 kernel := build/kernel.bin
-img := build/os.img
-iso := build/os.iso
+img := build/fragaria.img
+iso := build/fragaria.iso
 
 assembly_source_files := $(wildcard src/*.asm)
 assembly_object_files := $(patsubst src/%.asm, build/%.o, \
@@ -16,10 +16,13 @@ cc := $(arch)-gcc
 ld := $(arch)-ld
 asm = nasm
 
-.PHONY: all img iso clean
+.PHONY: fragaria img iso clean
 
-all: $(kernel)
-#	$(MAKE) -j8 $(kernel)
+fragaria: $(kernel)
+	$(MAKE) -j8 $(kernel)
+
+run: $(img)
+	qemu-system-x86_64 -s -drive format=raw,file=$(img)
 
 runiso: $(iso)
 	qemu-system-x86_64 -s -cdrom $(iso)
@@ -42,7 +45,10 @@ $(img): $(kernel) src/grub.cfg
 	sudo mkdosfs -F32 -f 2 $${loopdir}p1
 	mkdir -p build/fatgrub
 	sudo mount $${loopdir}p1 build/fatgrub
-	# grub2-install
+	sudo ./grub/grub-install -d grub/grub-core/ \
+		--root-directory=build/fatgrub --no-floppy \
+	       	--modules="normal part_msdos fat ext2 multiboot multiboot2" \
+		--target=i386-pc $${loopdir}
 	sudo cp -r build/imgfiles/* build/fatgrub
 	sudo umount build/fatgrub
 	sudo losetup -d $$loopdir
@@ -63,7 +69,7 @@ build/%.o: src/%.asm
 
 build/%.o: src/%.c
 	mkdir -p $(@D)
-	$(cc) -c -g $< -o $@
+	$(cc) -c -g -Wall -Werror $< -o $@
 
 clean:
 	rm -rf build/

@@ -1,5 +1,6 @@
-/* 
- * kmain
+/* Ryan Jacoby
+ * Fragaria C entry point
+ * 
  */
 
 

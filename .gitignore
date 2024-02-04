@@ -166,4 +166,5 @@ tags
 
 ## Project Specific (CPE-454) ##
 build/
+grub/
 *.mp4
