@@ -13,8 +13,11 @@ c_source_files := $(wildcard src/*.c)
 c_object_files := $(patsubst src/%.c, build/%.o, $(c_source_files))
 
 cc := $(arch)-gcc
-ld := $(arch)-ld
+ld := $(arch)-gcc
 asm = nasm
+
+cflags = -c -g -Werror -Wall -ffreestanding -mno-red-zone
+ldflags = -n -nostdlib -lgcc
 
 .PHONY: fragaria img iso clean
 
@@ -60,7 +63,7 @@ $(iso): $(kernel) src/grub.cfg
 	grub2-mkrescue -o $@ build/isofiles
 
 $(kernel): $(assembly_object_files) $(c_object_files) src/linker.ld
-	$(ld) -n -T src/linker.ld -o $@ $(assembly_object_files) \
+	$(ld) $(ldflags) -T src/linker.ld -o $@ $(assembly_object_files) \
 		$(c_object_files)
 
 build/%.o: src/%.asm
@@ -69,7 +72,7 @@ build/%.o: src/%.asm
 
 build/%.o: src/%.c
 	mkdir -p $(@D)
-	$(cc) -c -g -Wall -Werror $< -o $@
+	$(cc) $(cflags) $< -o $@
 
 clean:
 	rm -rf build/

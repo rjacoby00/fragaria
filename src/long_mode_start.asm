@@ -19,4 +19,6 @@ long_mode_start:
         mov rax, 0x4f444f414f454f44             ; print DEAD if kmain exits
         mov qword [0x0b8000], rax
 
+.dead:
         hlt
+        jmp .dead                               ; go back to sleep if we int
