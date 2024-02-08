@@ -90,14 +90,17 @@ int VGA_display_char(char c)
  * VGA_display_str() - print a string to BIOS VGA console
  * @str: String to print
  *
- * Return: zero on success
+ * Return: number of characters
  */
 int VGA_display_str(const char * str)
 {
+        int ret = 0;
+
         while (*str) {
                 VGA_display_char(*str);
                 str++;
+                ret++;
         }
 
-        return 0;
+        return ret;
 }
