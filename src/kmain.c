@@ -7,11 +7,21 @@
  */
 
 #include "printk.h"
+#include "ps2.h"
 #include "vga.h"
+
+static void keyboard_loop()
+{
+        char character;
+
+        while(1)
+                if((character = get_char())) VGA_display_char(character);
+} 
 
 void kmain()
 {
         VGA_clear();
+        ps2_init();
 
         printk("fragaria starting\n\n");
         printk("test\n%d\n%d\n%d%%\rr\n", 1, 10, 100);
@@ -35,8 +45,8 @@ void kmain()
         for(int i = 0; i < 5; i++)
                 VGA_display_str("a\n");
 
-        while(1)
-                asm("hlt");
+        keyboard_loop();
+
 
         return;
 }
