@@ -1,0 +1,314 @@
+global irq_entry
+extern irq_c_handler
+
+%macro ISR_NOERRCODE 1
+extern irq%1
+irq%1:
+        cli
+        push 0                                  ; Put dummy error code
+        push %1                                 ; Save our IRQ num
+        jmp irq_entry
+%endmacro
+
+%macro ISR_ERRCODE 1
+extern irq%1
+irq%1:
+        cli
+        push %1                                 ; Save IRQ num
+        jmp irq_entry
+%endmacro
+
+; CPU Faults
+ISR_NOERRCODE 0x00                              ; Divide by zero
+ISR_NOERRCODE 0x01                              ; Debug
+ISR_NOERRCODE 0x02                              ; Non-maskable interrupt
+ISR_NOERRCODE 0x03                              ; Breakpoint
+ISR_NOERRCODE 0x04                              ; Overflow
+ISR_NOERRCODE 0x05                              ; Bound range exceeded
+ISR_NOERRCODE 0x06                              ; Invalid opcode
+ISR_NOERRCODE 0x07                              ; Device not available
+ISR_ERRCODE   0x08                              ; Double fault
+ISR_NOERRCODE 0x09                              ; Coprocessor segment overrun
+ISR_ERRCODE   0x0A                              ; Invalid TSS
+ISR_ERRCODE   0x0B                              ; Segment not present
+ISR_ERRCODE   0x0C                              ; Stack-segment fault
+ISR_ERRCODE   0x0D                              ; General protection fault
+ISR_ERRCODE   0x0E                              ; Page fault
+ISR_NOERRCODE 0x0F                              ; Reserved
+ISR_NOERRCODE 0x10                              ; x87 floating-point exception
+ISR_NOERRCODE 0x11                              ; Alignment check
+ISR_NOERRCODE 0x12                              ; Machine check
+ISR_NOERRCODE 0x13                              ; SIMD floating-point exception
+ISR_NOERRCODE 0x14                              ; Virtualization exception
+ISR_NOERRCODE 0x15                              ; Control protected exception
+ISR_NOERRCODE 0x16                              ; Reserved
+ISR_NOERRCODE 0x17                              ; Reserved
+ISR_NOERRCODE 0x18                              ; Reserved
+ISR_NOERRCODE 0x19                              ; Reserved
+ISR_NOERRCODE 0x1A                              ; Reserved
+ISR_NOERRCODE 0x1B                              ; Reserved
+ISR_NOERRCODE 0x1C                              ; Hypervisor exception
+ISR_NOERRCODE 0x1D                              ; VMM communication exception
+ISR_NOERRCODE 0x1E                              ; Security Exception
+ISR_NOERRCODE 0x1F                              ; Reserved
+; PIC interrupts
+ISR_NOERRCODE 0x20
+ISR_NOERRCODE 0x21
+ISR_NOERRCODE 0x22
+ISR_NOERRCODE 0x23
+ISR_NOERRCODE 0x24
+ISR_NOERRCODE 0x25
+ISR_NOERRCODE 0x26
+ISR_NOERRCODE 0x27
+ISR_NOERRCODE 0x28
+ISR_NOERRCODE 0x29
+ISR_NOERRCODE 0x2A
+ISR_NOERRCODE 0x2B
+ISR_NOERRCODE 0x2C
+ISR_NOERRCODE 0x2D
+ISR_NOERRCODE 0x2E
+ISR_NOERRCODE 0x2F
+; General interrupts
+ISR_NOERRCODE 0x30
+ISR_NOERRCODE 0x31
+ISR_NOERRCODE 0x32
+ISR_NOERRCODE 0x33
+ISR_NOERRCODE 0x34
+ISR_NOERRCODE 0x35
+ISR_NOERRCODE 0x36
+ISR_NOERRCODE 0x37
+ISR_NOERRCODE 0x38
+ISR_NOERRCODE 0x39
+ISR_NOERRCODE 0x3A
+ISR_NOERRCODE 0x3B
+ISR_NOERRCODE 0x3C
+ISR_NOERRCODE 0x3D
+ISR_NOERRCODE 0x3E
+ISR_NOERRCODE 0x3F
+ISR_NOERRCODE 0x40
+ISR_NOERRCODE 0x41
+ISR_NOERRCODE 0x42
+ISR_NOERRCODE 0x43
+ISR_NOERRCODE 0x44
+ISR_NOERRCODE 0x45
+ISR_NOERRCODE 0x46
+ISR_NOERRCODE 0x47
+ISR_NOERRCODE 0x48
+ISR_NOERRCODE 0x49
+ISR_NOERRCODE 0x4A
+ISR_NOERRCODE 0x4B
+ISR_NOERRCODE 0x4C
+ISR_NOERRCODE 0x4D
+ISR_NOERRCODE 0x4E
+ISR_NOERRCODE 0x4F
+ISR_NOERRCODE 0x50
+ISR_NOERRCODE 0x51
+ISR_NOERRCODE 0x52
+ISR_NOERRCODE 0x53
+ISR_NOERRCODE 0x54
+ISR_NOERRCODE 0x55
+ISR_NOERRCODE 0x56
+ISR_NOERRCODE 0x57
+ISR_NOERRCODE 0x58
+ISR_NOERRCODE 0x59
+ISR_NOERRCODE 0x5A
+ISR_NOERRCODE 0x5B
+ISR_NOERRCODE 0x5C
+ISR_NOERRCODE 0x5D
+ISR_NOERRCODE 0x5E
+ISR_NOERRCODE 0x5F
+ISR_NOERRCODE 0x60
+ISR_NOERRCODE 0x61
+ISR_NOERRCODE 0x62
+ISR_NOERRCODE 0x63
+ISR_NOERRCODE 0x64
+ISR_NOERRCODE 0x65
+ISR_NOERRCODE 0x66
+ISR_NOERRCODE 0x67
+ISR_NOERRCODE 0x68
+ISR_NOERRCODE 0x69
+ISR_NOERRCODE 0x6A
+ISR_NOERRCODE 0x6B
+ISR_NOERRCODE 0x6C
+ISR_NOERRCODE 0x6D
+ISR_NOERRCODE 0x6E
+ISR_NOERRCODE 0x6F
+ISR_NOERRCODE 0x70
+ISR_NOERRCODE 0x71
+ISR_NOERRCODE 0x72
+ISR_NOERRCODE 0x73
+ISR_NOERRCODE 0x74
+ISR_NOERRCODE 0x75
+ISR_NOERRCODE 0x76
+ISR_NOERRCODE 0x77
+ISR_NOERRCODE 0x78
+ISR_NOERRCODE 0x79
+ISR_NOERRCODE 0x7A
+ISR_NOERRCODE 0x7B
+ISR_NOERRCODE 0x7C
+ISR_NOERRCODE 0x7D
+ISR_NOERRCODE 0x7E
+ISR_NOERRCODE 0x7F
+ISR_NOERRCODE 0x80
+ISR_NOERRCODE 0x81
+ISR_NOERRCODE 0x82
+ISR_NOERRCODE 0x83
+ISR_NOERRCODE 0x84
+ISR_NOERRCODE 0x85
+ISR_NOERRCODE 0x86
+ISR_NOERRCODE 0x87
+ISR_NOERRCODE 0x88
+ISR_NOERRCODE 0x89
+ISR_NOERRCODE 0x8A
+ISR_NOERRCODE 0x8B
+ISR_NOERRCODE 0x8C
+ISR_NOERRCODE 0x8D
+ISR_NOERRCODE 0x8E
+ISR_NOERRCODE 0x8F
+ISR_NOERRCODE 0x90
+ISR_NOERRCODE 0x91
+ISR_NOERRCODE 0x92
+ISR_NOERRCODE 0x93
+ISR_NOERRCODE 0x94
+ISR_NOERRCODE 0x95
+ISR_NOERRCODE 0x96
+ISR_NOERRCODE 0x97
+ISR_NOERRCODE 0x98
+ISR_NOERRCODE 0x99
+ISR_NOERRCODE 0x9A
+ISR_NOERRCODE 0x9B
+ISR_NOERRCODE 0x9C
+ISR_NOERRCODE 0x9D
+ISR_NOERRCODE 0x9E
+ISR_NOERRCODE 0x9F
+ISR_NOERRCODE 0xA0
+ISR_NOERRCODE 0xA1
+ISR_NOERRCODE 0xA2
+ISR_NOERRCODE 0xA3
+ISR_NOERRCODE 0xA4
+ISR_NOERRCODE 0xA5
+ISR_NOERRCODE 0xA6
+ISR_NOERRCODE 0xA7
+ISR_NOERRCODE 0xA8
+ISR_NOERRCODE 0xA9
+ISR_NOERRCODE 0xAA
+ISR_NOERRCODE 0xAB
+ISR_NOERRCODE 0xAC
+ISR_NOERRCODE 0xAD
+ISR_NOERRCODE 0xAE
+ISR_NOERRCODE 0xAF
+ISR_NOERRCODE 0xB0
+ISR_NOERRCODE 0xB1
+ISR_NOERRCODE 0xB2
+ISR_NOERRCODE 0xB3
+ISR_NOERRCODE 0xB4
+ISR_NOERRCODE 0xB5
+ISR_NOERRCODE 0xB6
+ISR_NOERRCODE 0xB7
+ISR_NOERRCODE 0xB8
+ISR_NOERRCODE 0xB9
+ISR_NOERRCODE 0xBA
+ISR_NOERRCODE 0xBB
+ISR_NOERRCODE 0xBC
+ISR_NOERRCODE 0xBD
+ISR_NOERRCODE 0xBE
+ISR_NOERRCODE 0xBF
+ISR_NOERRCODE 0xC0
+ISR_NOERRCODE 0xC1
+ISR_NOERRCODE 0xC2
+ISR_NOERRCODE 0xC3
+ISR_NOERRCODE 0xC4
+ISR_NOERRCODE 0xC5
+ISR_NOERRCODE 0xC6
+ISR_NOERRCODE 0xC7
+ISR_NOERRCODE 0xC8
+ISR_NOERRCODE 0xC9
+ISR_NOERRCODE 0xCA
+ISR_NOERRCODE 0xCB
+ISR_NOERRCODE 0xCC
+ISR_NOERRCODE 0xCD
+ISR_NOERRCODE 0xCE
+ISR_NOERRCODE 0xCF
+ISR_NOERRCODE 0xD0
+ISR_NOERRCODE 0xD1
+ISR_NOERRCODE 0xD2
+ISR_NOERRCODE 0xD3
+ISR_NOERRCODE 0xD4
+ISR_NOERRCODE 0xD5
+ISR_NOERRCODE 0xD6
+ISR_NOERRCODE 0xD7
+ISR_NOERRCODE 0xD8
+ISR_NOERRCODE 0xD9
+ISR_NOERRCODE 0xDA
+ISR_NOERRCODE 0xDB
+ISR_NOERRCODE 0xDC
+ISR_NOERRCODE 0xDD
+ISR_NOERRCODE 0xDE
+ISR_NOERRCODE 0xDF
+ISR_NOERRCODE 0xE0
+ISR_NOERRCODE 0xE1
+ISR_NOERRCODE 0xE2
+ISR_NOERRCODE 0xE3
+ISR_NOERRCODE 0xE4
+ISR_NOERRCODE 0xE5
+ISR_NOERRCODE 0xE6
+ISR_NOERRCODE 0xE7
+ISR_NOERRCODE 0xE8
+ISR_NOERRCODE 0xE9
+ISR_NOERRCODE 0xEA
+ISR_NOERRCODE 0xEB
+ISR_NOERRCODE 0xEC
+ISR_NOERRCODE 0xED
+ISR_NOERRCODE 0xEE
+ISR_NOERRCODE 0xEF
+ISR_NOERRCODE 0xF0
+ISR_NOERRCODE 0xF1
+ISR_NOERRCODE 0xF2
+ISR_NOERRCODE 0xF3
+ISR_NOERRCODE 0xF4
+ISR_NOERRCODE 0xF5
+ISR_NOERRCODE 0xF6
+ISR_NOERRCODE 0xF7
+ISR_NOERRCODE 0xF8
+ISR_NOERRCODE 0xF9
+ISR_NOERRCODE 0xFA
+ISR_NOERRCODE 0xFB
+ISR_NOERRCODE 0xFC
+ISR_NOERRCODE 0xFD
+ISR_NOERRCODE 0xFE
+ISR_NOERRCODE 0xFF
+
+
+section .text
+bits 64
+irq_entry:
+        push rax
+        push rcx
+        push rdx
+        push rsi
+        push rdi
+        push r8
+        push r9
+        push r10
+        push r11
+        cld                                     ; Clear DF
+
+        ; Call irq_c_handler(irq_num, error, cr2)
+        mov rdi, [rsp+0+(9*8)]                  ; IRQ num (??)
+        mov rsi, [rsp+8+(9*8)]                  ; Error code
+        mov rdx, cr2                            ; CR2 Reg
+        call irq_c_handler
+
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rdi
+        pop rsi
+        pop rdx
+        pop rcx
+        pop rax
+        add rsp, 16                             ; Pop IRQ num and error
+
+        sti                                     ; Re-enable interrupts
+        iretq                                   ; Return from interrupt

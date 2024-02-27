@@ -19,7 +19,7 @@ asm = nasm
 cflags = -c -g -Werror -Wall -ffreestanding -mno-red-zone
 ldflags = -n -nostdlib -lgcc
 
-.PHONY: fragaria img iso clean
+.PHONY: fragaria run runiso debugiso img iso clean
 
 fragaria: $(kernel)
 	$(MAKE) -j8 $(kernel)
@@ -29,6 +29,10 @@ run: $(img)
 
 runiso: $(iso)
 	qemu-system-x86_64 -s -cdrom $(iso)
+
+debugiso: $(iso)
+	qemu-system-x86_64 -s -cdrom $(iso)&
+	gdb -x ./.gdbinit
 
 img: $(img)
 

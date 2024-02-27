@@ -23,4 +23,9 @@ static inline uint8_t inb(uint16_t port)
         return ret;
 }
 
+static inline void io_wait(void)
+{
+        outb(0x80, 0);
+}
+
 #endif /* #ifndef PORT_IO_H */

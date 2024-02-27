@@ -6,6 +6,10 @@
  * 
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "irq.h"
 #include "printk.h"
 #include "ps2.h"
 #include "vga.h"
@@ -18,10 +22,20 @@ static void keyboard_loop()
                 if((character = get_char())) VGA_display_char(character);
 } 
 
+static void pic_handle(int irq, uint32_t error, void * cr2, void * arg)
+{
+        printk("PIC got IRQ %d\n", irq - 0x20);
+}
+
 void kmain()
 {
         VGA_clear();
         ps2_init();
+
+        for(int i = 0x20; i < 0x30; i++)
+                IRQ_set_handler(i, pic_handle, NULL);
+
+        IRQ_init();
 
         printk("fragaria starting\n\n");
         printk("test\n%d\n%d\n%d%%\rr\n", 1, 10, 100);
@@ -40,10 +54,6 @@ void kmain()
         printk("long unsig: %lu\n", (long)-24);
         printk("long hex:   %lx\n", (long)-24);
         printk("pointer:    %p\n", kmain);
-
-
-        for(int i = 0; i < 5; i++)
-                VGA_display_str("a\n");
 
         keyboard_loop();
 
