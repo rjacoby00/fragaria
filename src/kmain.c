@@ -14,23 +14,34 @@
 #include "ps2.h"
 #include "vga.h"
 
-static void keyboard_loop()
-{
-        char character;
-
-        while(1)
-                if((character = get_char())) VGA_display_char(character);
-} 
-
 static void pic_handle(int irq, uint32_t error, void * cr2, void * arg)
 {
-        printk("PIC got IRQ %d\n", irq - 0x20);
+        irq -= PIC_1;
+
+        switch(irq) {
+        case PIC_KEYBOARD:
+                        char character;
+                        if((character = get_char()))
+                                VGA_display_char(character);
+
+                        break;
+        default:
+                        printk("Unhandled PIC IRQ: %d\n", irq);
+        }
+
+        IRQ_end_of_interrupt(irq);
+
+        return;
 }
 
 void kmain()
 {
         VGA_clear();
         ps2_init();
+
+        /* Mask all PIC interrupts */
+        for(int i = 0; i < 16; i++)
+                IRQ_set_mask(i);
 
         for(int i = 0x20; i < 0x30; i++)
                 IRQ_set_handler(i, pic_handle, NULL);
@@ -55,8 +66,11 @@ void kmain()
         printk("long hex:   %lx\n", (long)-24);
         printk("pointer:    %p\n", kmain);
 
-        keyboard_loop();
+        /* Unmask keyboard */
+        IRQ_clear_mask(1);
 
+        while(1)
+                asm("hlt");
 
         return;
 }

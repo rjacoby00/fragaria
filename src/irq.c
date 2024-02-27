@@ -417,23 +417,90 @@ void IRQ_init()
         return;
 }
 
+/**
+ * IRQ_set_mask() - set mask on any PIC line 
+ * @irq mask to set
+ * 
+ */
 void IRQ_set_mask(int irq)
 {
+        uint16_t port;
+        uint8_t value;
+
+        if (irq < 8) {
+                port = PIC_1_DATA;
+        } else {
+                port = PIC_2_DATA;
+                irq -= 8;
+        }
+
+        /* Get the mask and set the appropriate IRQ bit */
+        value = inb(port) | (1 << irq);
+
+        /* Write it */
+        outb(port, value);
+
         return;
 }
 
+/**
+ * IRQ_clear_mask() - Clear mask for any PIC line 
+ * @irq to clear
+ * 
+ */
 void IRQ_clear_mask(int irq)
 {
+        uint16_t port;
+        uint8_t value;
+
+        if (irq < 8) {
+                port = PIC_1_DATA;
+        } else {
+                port = PIC_2_DATA;
+                irq -= 8;
+        }
+
+        /* Get the mask and clear appropriate IRQ bit */
+        value = inb(port) & (~(1 << irq));
+
+        /* Write it */
+        outb(port, value);
+
         return;
 }
 
-int IRQ_get_mask(int IRQline)
+/**
+ * IRQ_get_mask() - get mask state for any IRQ line 
+ * @irq number to querry
+ * 
+ * @return zero on masked, appropriate bit on unmasked
+ */
+int IRQ_get_mask(int irq)
 {
-        return 0;
+        uint16_t port;
+
+        if (irq < 8) {
+                port = PIC_1_DATA;
+        } else {
+                port = PIC_2_DATA;
+                irq -= 8;
+        }
+
+        return inb(port) & (1 << irq);
 }
 
+/**
+ * IRQ_end_of_interrupt() - clear interrupt from PIC 
+ * @irq number to clear
+ * 
+ */
 void IRQ_end_of_interrupt(int irq)
 {
+        if(irq >= 8)
+                outb(PIC_2_COMMAND, PIC_EOI);
+
+        outb(PIC_1_COMMAND, PIC_EOI);
+
         return;
 }
 

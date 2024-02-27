@@ -189,7 +189,7 @@ int ps2_init()
         ps2_config.config = inb(PS2_IO_DATA_PORT);
 
         /* Dissable interrupts and translation */
-        ps2_config.running_config.port1_interrupt = 0;
+        ps2_config.running_config.port1_interrupt = 1;
         ps2_config.running_config.port2_interrupt = 0;
         ps2_config.running_config.port1_translation = 0;
 

@@ -22,6 +22,21 @@
 #define PIC_2_COMMAND                           PIC_2
 #define PIC_2_DATA                              (PIC_2+1)
 
+#define PIC_PROG_TIMER                          0
+#define PIC_KEYBOARD                            1
+#define PIC_CASCADE                             2       /* Used internally */
+#define PIC_COM2                                3
+#define PIC_COM1                                4
+#define PIC_LPT2                                5
+#define PIC_FLOPPY                              6
+#define PIC_LP1                                 7
+#define PIC_RTC                                 8
+#define PIC_PS2_MOUSE                           12
+#define PIC_FPU                                 13
+#define PIC_ATA_PRIMARY                         14
+#define PIC_ATA_SECONDARY                       15
+
+
 #define PIC_EOI                                 0x20    /* End of interrupt */
 
 #define ICW1_ICW4                               0x01    /* ICW4 present */
