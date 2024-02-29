@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "irq.h"
 #include "string.h"
 #include "vga.h"
 
@@ -69,6 +70,12 @@ int VGA_clear()
  */
 int VGA_display_char(char c)
 {
+        uint8_t enable_ints = 0;
+        if (interrupts_enabled()) {
+                enable_ints = 1;
+                CLI;
+        }
+
         if (c == '\n') {
                 cursor = (VGA_ROW(cursor) + 1) * VGA_WIDTH;
                 if(VGA_ROW(cursor) >= VGA_HEIGHT)
@@ -82,6 +89,9 @@ int VGA_display_char(char c)
                 if(VGA_ROW(cursor) >= VGA_HEIGHT)
                         scroll();
         }
+
+        if (enable_ints)
+                STI;
 
         return 0;
 }

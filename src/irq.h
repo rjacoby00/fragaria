@@ -13,6 +13,20 @@
 #define CLI asm("cli")
 #define STI asm("sti")
 
+#define IFLAGS_IF                               0x0200
+
+static inline uint8_t interrupts_enabled(void)
+{
+        unsigned long flags;
+
+        asm volatile("pushf; pop %0"
+                : "=rm" (flags)
+                :
+                : "memory");
+
+        return flags & IFLAGS_IF;
+}
+
 #define NUM_IRQS                                256
 
 #define PIC_1                                   0x20    /* Main PIC 1-7 */
