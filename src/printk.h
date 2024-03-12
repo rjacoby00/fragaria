@@ -3,6 +3,7 @@
  * fragaria/src/printk.h
  *
  * Header for printk and future related functions
+ * 
  */
 
 #ifndef PRINTK_H

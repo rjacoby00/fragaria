@@ -3,6 +3,7 @@
  * fragaria/src/string.h
  *
  * Header for Fragaria C standard string functions
+ * 
  */
 
 #ifndef STRING_H

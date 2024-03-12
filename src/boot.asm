@@ -1,6 +1,13 @@
 global start
 extern long_mode_start                          ; Entry point of long mode
 
+global pf_stack_top
+global pf_stack_bottom
+global df_stack_top
+global df_stack_bottom
+global gp_stack_top
+global gp_stack_bottom
+
 section .text
 bits 32
 start:
@@ -128,9 +135,17 @@ p3_table:
 p2_table:
         resb 4096
 stack_bottom:
-        resb 64
+        resb 2048
 stack_top:
-
+pf_stack_bottom:
+        resb 512
+pf_stack_top:
+df_stack_bottom:
+        resb 512
+df_stack_top:
+gp_stack_bottom:
+        resb 512
+gp_stack_top:
 
 section .rodata
 gdt64:

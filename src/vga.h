@@ -3,6 +3,7 @@
  * fragaria/src/vga.h
  *
  * Header for BIOS VGA interface functions
+ * 
  */
 
 #ifndef VGA_H

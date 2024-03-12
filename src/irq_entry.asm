@@ -2,7 +2,7 @@ global irq_entry
 extern irq_c_handler
 
 %macro ISR_NOERRCODE 1
-extern irq%1
+global irq%1
 irq%1:
         cli
         push 0                                  ; Put dummy error code
@@ -11,7 +11,7 @@ irq%1:
 %endmacro
 
 %macro ISR_ERRCODE 1
-extern irq%1
+global irq%1
 irq%1:
         cli
         push %1                                 ; Save IRQ num
@@ -293,10 +293,12 @@ irq_entry:
         push r11
         cld                                     ; Clear DF
 
-        ; Call irq_c_handler(irq_num, error, cr2)
-        mov rdi, [rsp+0+(9*8)]                  ; IRQ num (??)
+        ; Call irq_c_handler(irq_num, error, cr2, irq_frame *)
+        mov rdi, [rsp+0+(9*8)]                  ; IRQ num
         mov rsi, [rsp+8+(9*8)]                  ; Error code
         mov rdx, cr2                            ; CR2 Reg
+        mov rcx, rsp                            ; irq_frame *
+        add rcx, 8+(9*8)
         call irq_c_handler
 
         pop r11

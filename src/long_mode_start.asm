@@ -1,4 +1,12 @@
+;
+; Ryan Jacoby <ryjacoby@calpoly.edu>
+; fragaria/src/long_mode_start.asm
+;
+; 64-bit C wrapper
+;
+
 global long_mode_start
+global panic
 extern kmain
 
 section .text
@@ -16,6 +24,7 @@ long_mode_start:
 
         call kmain                              ; jump to C
 
+panic:
         mov rax, 0x4f444f414f454f44             ; print DEAD if kmain exits
         mov qword [0x0b8000], rax
 

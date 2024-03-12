@@ -3,6 +3,7 @@
  * fragaria/src/vga.c
  *
  * BIOS VGA interface functions
+ * 
  */
 
 #include <stdint.h>

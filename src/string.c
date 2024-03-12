@@ -3,6 +3,7 @@
  * fragaria/src/string.c
  *
  * Fragaria C standard string functions
+ * 
  */
 
 #include <stddef.h>

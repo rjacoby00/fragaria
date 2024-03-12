@@ -3,6 +3,7 @@
  * fragaria/src/printk.c
  *
  * printk() and helper functions
+ * 
  */
 
 #include <stdarg.h>

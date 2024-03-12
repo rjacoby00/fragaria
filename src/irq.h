@@ -3,6 +3,7 @@
  * fragaria/src/irq.h
  *
  * Header for interrupt handling setup, functions, and macros
+ * 
  */
 
 #ifndef IRQ_H
@@ -68,18 +69,6 @@ static inline uint8_t interrupts_enabled(void)
 #define INT_TYPE_INTERRUPT                      0x0E
 #define INT_TYPE_TRAP                           0x0F
 
-extern void * irq_entry;                        /* asm irq handler entry */
-void irq_c_handler(int, uint32_t, void *);      /* c irq handler entry */
-
-typedef void (*irq_handler_t)(int irq, uint32_t error, void * cr2, void * arg);
-
-void IRQ_init(void);
-void IRQ_set_mask(int);
-void IRQ_clear_mask(int);
-int IRQ_get_mask(int);
-void IRQ_end_of_interrupt(int);
-void IRQ_set_handler(int, irq_handler_t, void *);
-
 struct idt_entry {
         uint16_t target_offset0;
         uint16_t target_selector;
@@ -95,22 +84,30 @@ struct idt_entry {
 } __attribute__((packed));
 
 struct irq_stack_frame {
+        uint32_t error_code;
+        uint32_t reserved0;
         uint64_t rip;
         uint16_t cs;
-        uint16_t reserved0;
-        uint32_t reserved1;
+        uint16_t reserved1;
+        uint32_t reserved2;
         uint64_t rflags;
         uint64_t rsp;
         uint16_t ss;
-        uint16_t reserved2;
-        uint32_t reserved3;
+        uint16_t reserved3;
+        uint32_t reserved4;
 } __attribute__((packed));
 
-struct irq_stack_frame_ec {
-        uint32_t error_code;
-        uint32_t reserved;
-        struct irq_stack_frame frame;
-} __attribute__((packed));
+extern void * irq_entry;                        /* asm irq handler entry */
+void irq_c_handler(int, uint32_t, void *, struct irq_stack_frame *);
+
+typedef void (*irq_handler_t)(int irq, uint32_t error, void * cr2, void * arg);
+
+void IRQ_init(void);
+void IRQ_set_mask(int);
+void IRQ_clear_mask(int);
+int IRQ_get_mask(int);
+void IRQ_end_of_interrupt(int);
+void IRQ_set_handler(int, irq_handler_t, void *);
 
 extern void irq0x00(void);
 extern void irq0x01(void);

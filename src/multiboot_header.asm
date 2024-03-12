@@ -1,3 +1,10 @@
+;
+; Ryan Jacoby <ryjacoby@calpoly.edu>
+; fragaria/src/multiboot_header.asm
+;
+; Magic numbers to setup multiboot 2
+;
+
 section .multiboot_header
 header_start:
         dd 0xE85250D6                   ; multiboot 2 magic number
