@@ -13,6 +13,8 @@
 #include "irq.h"
 #include "port_io.h"
 #include "printk.h"
+#include "ps2.h"        /* Used for hooking PIC handler to driver */
+#include "serial.h"     /* Used for hooking PIC handler to driver */
 
 /* Main IDT */
 struct idt_entry idt[256];
@@ -22,6 +24,39 @@ static struct {
         void * arg;
         irq_handler_t handler;
 } irq_table[NUM_IRQS] = {0};
+
+/**
+ * pic_handle() - Small irq_handle_t to handle PIC and dispach to multiple devs
+ * @irq numer - subtract 0x20 to get PIC line
+ * @error number(should always be zero)
+ * @cr2 register contents; should always be zero
+ * @arg unused
+ * 
+ * This provides a basic way to handle multiple deviceas on the same PIC channel
+ * until there's a dynamic way to register multiple PIC/IRQ handlers per
+ * channel/irq.
+ * 
+ */
+static void pic_handle(int irq, uint32_t error, void * cr2, void * arg)
+{
+        irq -= PIC_1;
+
+        switch(irq) {
+        case PIC_KEYBOARD:
+                        ps2_pic_handle();
+                        break; 
+        case PIC_COM1:
+        case PIC_COM2:
+                        serial_pic_handle();
+                        break;
+        default:
+                        printk("Unhandled PIC IRQ: %d\n", irq);
+        }
+
+        IRQ_end_of_interrupt(irq);
+
+        return;
+}
 
 /**
  * irq_c_handler() - C entry to interrupt handling
@@ -34,19 +69,10 @@ static struct {
 void irq_c_handler(int irq, uint32_t error, void * cr2, 
         struct irq_stack_frame * frame)
 {
-        printk("Interrupt received: 0x%x\n", irq);
-        printk("    Error: %x\n", error);
-        printk("    CR2: %p\n", cr2);
-        printk("    Instruction Pointer: 0x%lx\n", frame->rip);
-        printk("    Code Segment: %d\n", frame->cs);
-        printk("    CPU Flags: %lx\n", frame->rflags);
-        printk("    Stack Pointer: 0x%lx\n", frame->rsp);
-        printk("    Stack Segment: %d\n", frame->ss);
 
         if (irq_table[irq].handler) {
                 irq_table[irq].handler(irq, error, cr2, irq_table[irq].arg);
         } else {
-                /*
                 printk("ERROR: Unhandled interrupt: 0x%x\n", irq);
                 printk("    Error: %x\n", error);
                 printk("    CR2: %p\n", cr2);
@@ -55,7 +81,6 @@ void irq_c_handler(int irq, uint32_t error, void * cr2,
                 printk("    CPU Flags: %lx\n", frame->rflags);
                 printk("    Stack Pointer: 0x%lx\n", frame->rsp);
                 printk("    Stack Segment: %d\n", frame->ss);
-                */
                 printk("Unrecoverable error, stopping...\n");
                 asm("hlt");
         }
@@ -160,9 +185,19 @@ void IRQ_init()
         /* Disable interrupts */
         CLI;
 
+        /* Setup PIC handle stuff first */
+        /* Mask all PIC interrupts */
+        for(int i = 0; i < 16; i++)
+                IRQ_set_mask(i);
+
+        /* Register common PIC hanlder */
+        for(int i = 0x20; i < 0x30; i++)
+                IRQ_set_handler(i, pic_handle, NULL);
+
         /* Remap PICs to interrupts 0x20-0x2F */
         remap_PIC(0x20, 0x28);
 
+        /* Now setup IDT */
         /* Set up the argument to pass to lidt */
         idt_pointer.limit = sizeof(idt) - 1;
         idt_pointer.base = (uint64_t)idt;
@@ -427,8 +462,6 @@ void IRQ_init()
 
         /* Load the IDT */
         asm("lidt %0" :: "m"(idt_pointer));
-
-        printk("Interrupts setup\n");
 
         /* Enable interrupts */
         STI;

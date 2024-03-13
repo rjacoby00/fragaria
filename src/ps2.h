@@ -72,7 +72,8 @@ struct ps2_configuration {
 } __attribute__((packed));
 
 int ps2_init(void);
-int read_keyboard(void);
 char get_char(void);
+
+void ps2_pic_handle(void);
 
 #endif /* #ifndef PS2_H */

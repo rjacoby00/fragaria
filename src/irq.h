@@ -16,7 +16,7 @@
 
 #define IFLAGS_IF                               0x0200
 
-static inline uint8_t interrupts_enabled(void)
+static inline uint16_t interrupts_enabled(void)
 {
         unsigned long flags;
 
@@ -25,7 +25,10 @@ static inline uint8_t interrupts_enabled(void)
                 :
                 : "memory");
 
-        return flags & IFLAGS_IF;
+        if (flags & IFLAGS_IF)
+                return 1;
+
+        return 0;
 }
 
 #define NUM_IRQS                                256

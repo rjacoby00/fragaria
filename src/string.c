@@ -42,7 +42,11 @@ void * memcpy(void * dst, const void * src, size_t n)
  */
 size_t strlen(const char * s)
 {
-        return 0;
+        int ret;
+
+        for(ret = 0; s[ret]; ret++);
+
+        return ret;
 }
 
 /*

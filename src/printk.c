@@ -10,7 +10,16 @@
 #include <stdint.h>
 
 #include "printk.h"
+#include "serial.h"
+#include "string.h"
 #include "vga.h"
+
+static void output(char c)
+{
+        VGA_display_char(c);
+        SER_write(&c, 1);
+        return;
+}
 
 static int print_hex(unsigned int x)
 {
@@ -23,9 +32,9 @@ static int print_hex(unsigned int x)
         /* Print them in reverse order */
         for (; i > 0; i = i / 16) {
                 if((x / i) % 16 < 10)
-                        VGA_display_char('0' + ((x / i) % 16));
+                        output('0' + ((x / i) % 16));
                 else
-                        VGA_display_char('a' - 10 + ((x / i) % 16));
+                        output('a' - 10 + ((x / i) % 16));
                 ret++;
         }
 
@@ -42,7 +51,7 @@ static int print_unsigned(unsigned int u)
         
         /* Print them in reverse order */
         for (; i > 0; i = i / 10) {
-                VGA_display_char('0' + ((u / i) % 10));
+                output('0' + ((u / i) % 10));
                 ret++;
         }
 
@@ -56,7 +65,7 @@ static int print_decimal(int d)
         /* If we have a negative number, print negative and treat invert */
         if (d < 0) {
                 d = d * -1;
-                VGA_display_char('-');
+                output('-');
                 ret++;
         }
 
@@ -81,7 +90,7 @@ int printk(const char * fmt, ...)
 
                         switch (*fmt) {
                         case '%':
-                                        VGA_display_char('%');
+                                        output('%');
                                         ret++;
                                         fmt++;
                                         break;
@@ -103,15 +112,15 @@ int printk(const char * fmt, ...)
                                         fmt++;
                                         break;
                         case 'c':
-                                        VGA_display_char(0xFF & va_arg(current,
+                                        output(0xFF & va_arg(current,
                                                         unsigned int));
                                         ret++;
                                         fmt++;
                                         break;
                         case 'p':
                                         /* Print 0x */
-                                        VGA_display_char('0');
-                                        VGA_display_char('x');
+                                        output('0');
+                                        output('x');
                                         /* Then do the same as lx */
                                         ret += 2 + print_hex(va_arg(current,
                                                         unsigned long));
@@ -200,14 +209,15 @@ int printk(const char * fmt, ...)
 
                                         break;
                         case 's':
-                                        ret += VGA_display_str(va_arg(current,
-                                                        char *));
+                                        char * cs = va_arg(current, char *);
+                                        ret += VGA_display_str(cs);
+                                        SER_write(cs, strlen(cs));
                                         fmt++;
                                         break;
                         default:
                         }
                 } else {
-                        VGA_display_char(*fmt);
+                        output(*fmt);
                         ret++;
                         fmt++;
                 }

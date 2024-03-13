@@ -25,10 +25,10 @@ fragaria: $(kernel)
 	$(MAKE) -j8 $(kernel)
 
 run: $(img)
-	qemu-system-x86_64 -s -drive format=raw,file=$(img)
+	qemu-system-x86_64 -s -drive format=raw,file=$(img) -serial stdio
 
 runiso: $(iso)
-	qemu-system-x86_64 -s -cdrom $(iso)
+	qemu-system-x86_64 -s -cdrom $(iso) -serial stdio
 
 debugiso: $(iso)
 	qemu-system-x86_64 -s -cdrom $(iso)&

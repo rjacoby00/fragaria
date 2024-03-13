@@ -6,7 +6,9 @@
  * 
  */
 
+#include "irq.h"
 #include "port_io.h"
+#include "printk.h"
 #include "ps2.h"
 
 /* TODO Make timeouts for all polling in this file */
@@ -91,24 +93,62 @@ const char scanmap_shift[] = {
                 '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
 };
 
+/**
+ * ps2_pic_handle() - Small utility to handle PS2 PIC interrupts
+ * 
+ * VGA display should probably be somewhere else, but that will come with full
+ * multithreaded PS2 driver. 
+ * 
+ */
+void ps2_pic_handle()
+{
+        char character;
+
+        if((character = get_char()))
+                printk("%c", character);
+
+        return;
+}
+
 static int write_keyboard(uint8_t command)
 {
-        while(PS2_STATUS_INPUT_BUFF & inb(PS2_IO_COMMAND_PORT));
+        while (PS2_STATUS_INPUT_BUFF & inb(PS2_IO_COMMAND_PORT));
         outb(PS2_IO_DATA_PORT, command);
 
         return 0;
 }
 
-int read_keyboard()
+/**
+ * read_keyboard_b() - Block until data is ready to be read from keyboard 
+ * 
+ * @return data byte read from keyboard
+ */
+static int read_keyboard_b()
 {
-        while(!(PS2_STATUS_OUTPUT_BUFF & inb(PS2_IO_COMMAND_PORT)));
+        while (!(PS2_STATUS_OUTPUT_BUFF & inb(PS2_IO_COMMAND_PORT)));
 
         return inb(PS2_IO_DATA_PORT);
+}
+
+/**
+ * read_keyboard() - Read data from keyboard; don't block 
+ * 
+ * @return data byte read from keyboard or -1 on no data 
+ */
+static int read_keyboard()
+{
+        if (PS2_STATUS_OUTPUT_BUFF & inb(PS2_IO_COMMAND_PORT))
+                return inb(PS2_IO_DATA_PORT);
+
+        return -1;
 }
 
 char get_char() 
 {
         int character = read_keyboard();
+
+        if(character < 0)
+                return '\0';
 
         switch (character) { 
         case SCAN_TAB:
@@ -139,7 +179,9 @@ char get_char()
         case SCAN_SCROLL_LOCK:
                         return '\0';
         case SCAN_RELEASE:
-                        character = read_keyboard();
+                        /* Block here; we can't really fix until we have
+                         * multithreading */
+                        character = read_keyboard_b();
                         switch (character) {
                         case SCAN_LEFT_SHIFT:
                                 lshift = 0;
@@ -153,10 +195,14 @@ char get_char()
 
                         return '\0';
         case SCAN_MULTI_BYTE:
-                        character = read_keyboard();
+                        /* Same blocking here; could be dangerous if we somehow
+                         * miss a byte; but under normal circumstances this is
+                         * the only reliable way to guarantee we read the right
+                         * number of bytes */
+                        character = read_keyboard_b();
 
                         if (character == SCAN_RELEASE)
-                                character = read_keyboard();
+                                character = read_keyboard_b();
 
                         return '\0';
         default:
@@ -210,21 +256,21 @@ int ps2_init()
         /* Reset keyboard and do self test */
         do {
                 write_keyboard(PS2_KEYBOARD_RESET);
-        } while (read_keyboard() != PS2_KEYBOARD_ACK);  /* Keep resending */
+        } while (read_keyboard_b() != PS2_KEYBOARD_ACK); /* Keep resending */
         /* Once we get an ACK, we should get self-test passed */
-        if(read_keyboard() != PS2_KEYBOARD_SELF_TEST_PASS)
+        if(read_keyboard_b() != PS2_KEYBOARD_SELF_TEST_PASS)
                 return 1;
 
         /* Set scancode 2 */
         do {
                 write_keyboard(PS2_KEYBOARD_SET_SCANCODE_SET);
                 write_keyboard(2);
-        } while (read_keyboard() != PS2_KEYBOARD_ACK);
+        } while (read_keyboard_b() != PS2_KEYBOARD_ACK);
 
         /* Enable scanning */
         do {
                 write_keyboard(PS2_KEYBOARD_ENABLE_SCANNING);
-        } while (read_keyboard() != PS2_KEYBOARD_ACK);
+        } while (read_keyboard_b() != PS2_KEYBOARD_ACK);
 
         return 0;
 }

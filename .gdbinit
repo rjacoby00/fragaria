@@ -2,15 +2,8 @@ set arch i386:x86-64:intel
 symbol-file build/kernel.bin
 target remote localhost:1234
 break kmain
-break irq_c_handler
+break irq.c:73
 commands
-silent
-print *frame
-cont
-end
-break VGA_display_char
-commands
-silent
-print $rsp
+p/x *frame
 cont
 end
