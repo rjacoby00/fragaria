@@ -13,6 +13,11 @@ bits 32
 start:
         mov esp, stack_top                      ; Init stack
 
+        push 0x00                               ; Put multiboot regs on stack
+        push eax                                ; Pad with 32 bits of zero as
+        push 0x00                               ; we will pop back off when we
+        push ebx                                ; get to 64 bit mode.
+
         call check_multiboot                    ; Perform checks
         call check_cpuid
         call check_long_mode

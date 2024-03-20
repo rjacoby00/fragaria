@@ -22,6 +22,8 @@ long_mode_start:
         mov rax, 0x2f592f412f4b2f4f             ; print OKAY (now in 64 bits)
         mov qword [0x0b8000], rax
 
+        pop rsi                                 ; put pointer in second arg
+        pop rdi                                 ; put magic in first arg to
         call kmain                              ; jump to C
 
 panic:
