@@ -1,6 +1,8 @@
 global start
 extern long_mode_start                          ; Entry point of long mode
 
+global p4_table
+
 global pf_stack_top
 global pf_stack_bottom
 global df_stack_top

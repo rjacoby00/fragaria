@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "irq.h"
 #include "mm.h"
 #include "multiboot.h"
 #include "printk.h"
@@ -19,6 +20,154 @@ struct MM_unused unused[MM_RAM_REGIONS];
 
 struct MM_frame_list used;
 struct MM_frame_list freed;
+
+/* Shared heap break between MMU_alloc_page() and MMU_alloc_pages() */
+static void * heap_break = (void *)(0x008000000000);
+
+/**
+ * resolve_virt_addr() - Walk the page table for a virtual address
+ * @table Pointer to start of PML4 table
+ * @virt_addr to resolve
+ * 
+ * If the page table entries for this page table do not exist they get created
+ * 
+ * @return struct pt * pointer to level 1 page table entry for virtual address 
+ */
+static struct pt * resolve_virt_addr(struct pml4 * table, void * virt_addr)
+{
+        uint16_t p4_index, p3_index, p2_index, p1_index;
+        struct pml4 * p3_table, * p2_table;
+        struct pt * p1_table;
+
+        p4_index = ((uint64_t)virt_addr & PL4_MASK) >> 39;
+        p3_index = ((uint64_t)virt_addr & PL3_MASK) >> 30;
+        p2_index = ((uint64_t)virt_addr & PL2_MASK) >> 21;
+        p1_index = ((uint64_t)virt_addr & PL1_MASK) >> 12;
+
+        /* Don't let C touch the identity map(it uses large pages) */
+        if (p4_index == 0)
+                return MM_FRAME_EMPTY;
+
+        /* Resolve P3 table */
+        if (table[p4_index].present) {
+                p3_table = (struct pml4 *)(table[p4_index].address
+                        & MM_ADDR_MASK);
+        } else {
+                p3_table = MM_pf_alloc();
+
+                printk("Allocating new P3 table at P4[%d]\n", p4_index);
+
+                if (p3_table == MM_FRAME_EMPTY)
+                        return MM_FRAME_EMPTY;
+
+                for (int i = 0; i < MM_PF_SIZE / sizeof(struct pml4); i++) {
+                        p3_table[i].address = 0;
+                }
+
+                table[p4_index].address = (uint64_t)p3_table & MM_ADDR_MASK;
+                table[p4_index].present = 1;
+                table[p4_index].rw = 1;
+        }
+
+        /* Resolve P2 table */
+        if (p3_table[p3_index].present) {
+                p2_table = (struct pml4 *)(p3_table[p3_index].address
+                        & MM_ADDR_MASK);
+        } else {
+                p2_table = MM_pf_alloc();
+
+                printk("Allocating new P2 table at P3[%d]\n", p3_index);
+
+                if (p2_table == MM_FRAME_EMPTY)
+                        return MM_FRAME_EMPTY;
+
+                for (int i = 0; i < MM_PF_SIZE / sizeof(struct pml4); i++) {
+                        p2_table[i].address = 0;
+                }
+
+                p3_table[p3_index].address = (uint64_t)p2_table & MM_ADDR_MASK;
+                p3_table[p3_index].present = 1;
+                p3_table[p3_index].rw = 1;
+        }
+
+        /* Resolve P1 table */
+        if (p2_table[p2_index].present) {
+                p1_table = (struct pt *)(p2_table[p2_index].address
+                        & MM_ADDR_MASK);
+        } else {
+                p1_table = MM_pf_alloc();
+
+                printk("Allocating new P1 table at P2[%d]\n", p2_index);
+
+                if (p1_table == MM_FRAME_EMPTY)
+                        return MM_FRAME_EMPTY;
+
+                for (int i = 0; i < MM_PF_SIZE / sizeof(struct pt); i++) {
+                        p1_table[i].address = 0;
+                }
+
+                p2_table[p2_index].address = (uint64_t)p1_table & MM_ADDR_MASK;
+                p2_table[p2_index].present = 1;
+                p2_table[p2_index].rw = 1;
+        }
+
+        return p1_table + p1_index;
+}
+
+/**
+ * pf_handle() - Page Fault Handler 
+ * @irq number hanling
+ * @error value from interrupt
+ * @cr2 value at time of interrupt
+ * @arg optional from setup
+ * 
+ */
+static void pf_handle(int irq, uint32_t error, void * cr2, void * arg)
+{
+        void * sp;
+        struct pt * pt;
+        struct pt saved;
+
+        asm("mov %%rsp, %0" : "=rm"(sp));
+
+        printk("Fault at %p, new sp: %p\n", cr2, sp);
+
+        pt = resolve_virt_addr(p4_table, cr2);
+
+        /* Check if we should map this page into memory */
+        if ((void *)pt == MM_FRAME_EMPTY || pt->present 
+                        || pt->available != PT_TO_ALLOC) {
+                printk("Unhandled fault at %p!!!\nFATAL... STOPPING.\n", cr2);
+                asm("hlt");
+        }
+
+        saved.address = pt->address;
+
+        pt->address = (uint64_t)MM_pf_alloc();
+
+        if ((void *)pt->address == MM_FRAME_EMPTY) {
+                printk("Out of memory!\nFATAL... STOPPING.\n");
+                asm("hlt");
+        }
+
+
+        /* Set present and clear demand page bit */
+        pt->present = 1;
+        pt->available = 0;
+
+        /* Restore the other flags */
+        pt->rw = saved.rw;
+        pt->us = saved.us;
+        pt->pwt = saved.pwt;
+        pt->a = saved.a;
+        pt->d = saved.d;
+        pt->pat = saved.pat;
+        pt->g = saved.g;
+        pt->avl = saved.avl;
+        pt->nx = saved.nx;
+
+        return;
+}
 
 /**
  * MM_frame_list_contains() - Search frame list for a certain address 
@@ -179,7 +328,9 @@ static void parse_mem_map(struct multiboot_mem_map * mm)
 
 /**
  * MM_init() - Initialized memory mangement structures 
- * 
+ *
+ * Must be called after interrupts are set up
+ *  
  */
 void MM_init(struct multiboot_table_header * multiboot)
 {
@@ -228,7 +379,9 @@ void MM_init(struct multiboot_table_header * multiboot)
                 i += (current->size + 7) & 0xFFFFFFF8;
         }
 
-        /* Read in RAM regions */
+        /* Init PF handler */
+        IRQ_set_handler(EXCEPTION_PF, pf_handle, NULL);
+
         return;
 }
 
@@ -308,5 +461,64 @@ void MM_pf_free(void * pf)
                 printk("MM_pf_free() called on unallocated address %p!\n", pf);
         }
 
+        return;
+}
+
+/**
+ * MMU_alloc_page() - Allocates one page on the kernel heap 
+ * 
+ * @return void * old kernel heap break
+ */
+void * MMU_alloc_page()
+{
+        void * ret = heap_break;
+        struct pt * pt;
+
+        pt = resolve_virt_addr(p4_table, heap_break);
+
+        if (pt == MM_FRAME_EMPTY)
+                return MM_FRAME_EMPTY;
+
+        pt->address = 0;
+        /* Don't actually map page until something writes to it */
+        pt->present = 0;
+        pt->rw = 1;
+        pt->available = PT_TO_ALLOC;
+
+        heap_break += MM_PF_SIZE;
+
+        return ret;
+}
+
+/**
+ * MMU_alloc_pages() - Allocates n pages on the kernel heap 
+ * @n number of pages to allocate 
+ * 
+ * @return void * base address of highest page allocated
+ */
+void * MMU_alloc_pages(int n)
+{
+        void * ret = heap_break;
+
+        for(int i = 0; i < n; i++)
+                MMU_alloc_page();
+
+        return ret;
+}
+
+/**
+ * MMU_free_page() - Free pages above and including address 
+ * @page new heap break
+ * 
+ */
+void MMU_free_page(void * page)
+{
+        page = (void *)((uint64_t)page & ~(MM_PF_SIZE - 1));
+
+        if (page > heap_break) {
+                printk("cannot free unallocated heap space\n");
+        }
+
+        printk("trying to free %ld pages from heap\n", (heap_break - page) / MM_PF_SIZE);
         return;
 }

@@ -54,6 +54,21 @@ static inline uint16_t interrupts_enabled(void)
 #define PIC_ATA_PRIMARY                         14
 #define PIC_ATA_SECONDARY                       15
 
+#define EXCEPTION_DE                            0x00
+#define EXCEPTION_DB                            0x01
+#define EXCEPTION_NMI                           0x02
+#define EXCEPTION_BP                            0x03
+#define EXCEPTION_OF                            0x04
+#define EXCEPTION_BR                            0x05
+#define EXCEPTION_UD                            0x06
+#define EXCEPTION_NM                            0x07
+#define EXCEPTION_DF                            0x08
+#define EXCEPTION_CSO                           0x09
+#define EXCEPTION_TS                            0x0A
+#define EXCEPTION_NP                            0x0B
+#define EXCEPTION_SS                            0x0C
+#define EXCEPTION_GP                            0x0D
+#define EXCEPTION_PF                            0x0E
 
 #define PIC_EOI                                 0x20    /* End of interrupt */
 
