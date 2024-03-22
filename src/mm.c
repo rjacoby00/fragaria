@@ -523,6 +523,7 @@ void * MMU_alloc_pages(int n)
  */
 void MMU_free_page(void * page)
 {
+        struct cr3 cr3;
         page = (void *)((uint64_t)page & ~(MM_PF_SIZE - 1));
 
         if (page > heap_break) {
@@ -533,27 +534,28 @@ void MMU_free_page(void * page)
         printk("trying to free %ld pages from heap\n",
                 (heap_break - page) / MM_PF_SIZE);
 
-        /*
-         * For now, just move the heap break back as the cache is breaking this
         for (int i = 0; i < (heap_break - page) / MM_PF_SIZE; i++) {
                 void * current = heap_break - MM_PF_SIZE * (i + 1);
                 struct pt * pt;
                 printk("freeing page %p\n", current);
 
-                * Find the entry *
+                /* Find the entry */
                 pt = resolve_virt_addr(p4_table, current);
 
                 if (pt->present && pt->available == 0) {
-                        * Free the page *
+                        /* Free the page */
                         MM_pf_free((void *)(pt->address & MM_ADDR_MASK));
 
-                        * Set up entry to be re-demand paged *
+                        /* Set up entry to be re-demand paged */
                         pt->address = 0;
                 } else {
                         printk("page was never paged\n");
                 }
         }
-        */
+
+        /* Read in the cr3 reg and write it back out to invalidate TLB */
+        asm("movq %%cr3, %0" : "=r"(cr3));
+        asm("movq %0, %%cr3" :: "r"(cr3));
 
         heap_break = page;
 
