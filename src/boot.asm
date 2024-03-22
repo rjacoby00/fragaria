@@ -105,6 +105,7 @@ set_up_page_tables:
 
 enable_paging:
         mov eax, p4_table                       ; load P4 into CR3
+        or eax, 0b10000                         ; Set page cache disable
         mov cr3, eax
 
         mov eax, cr4                            ; enable PAE-flag in CR4
@@ -145,13 +146,13 @@ stack_bottom:
         resb 2048
 stack_top:
 pf_stack_bottom:
-        resb 512
+        resb 2048
 pf_stack_top:
 df_stack_bottom:
-        resb 512
+        resb 2048
 df_stack_top:
 gp_stack_bottom:
-        resb 512
+        resb 2048
 gp_stack_top:
 
 section .rodata

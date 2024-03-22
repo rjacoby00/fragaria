@@ -67,6 +67,7 @@ static struct pt * resolve_virt_addr(struct pml4 * table, void * virt_addr)
                 table[p4_index].address = (uint64_t)p3_table & MM_ADDR_MASK;
                 table[p4_index].present = 1;
                 table[p4_index].rw = 1;
+                table[p4_index].pcd = 1;
         }
 
         /* Resolve P2 table */
@@ -88,6 +89,7 @@ static struct pt * resolve_virt_addr(struct pml4 * table, void * virt_addr)
                 p3_table[p3_index].address = (uint64_t)p2_table & MM_ADDR_MASK;
                 p3_table[p3_index].present = 1;
                 p3_table[p3_index].rw = 1;
+                p3_table[p3_index].pcd = 1;
         }
 
         /* Resolve P1 table */
@@ -109,6 +111,7 @@ static struct pt * resolve_virt_addr(struct pml4 * table, void * virt_addr)
                 p2_table[p2_index].address = (uint64_t)p1_table & MM_ADDR_MASK;
                 p2_table[p2_index].present = 1;
                 p2_table[p2_index].rw = 1;
+                p2_table[p2_index].pcd = 1;
         }
 
         return p1_table + p1_index;
@@ -467,7 +470,7 @@ void MM_pf_free(void * pf)
 /**
  * MMU_alloc_page() - Allocates one page on the kernel heap 
  * 
- * @return void * old kernel heap break
+ * @return void * old kernel heap break, MM_FRAME_EMPTY on failure
  */
 void * MMU_alloc_page()
 {
@@ -479,10 +482,17 @@ void * MMU_alloc_page()
         if (pt == MM_FRAME_EMPTY)
                 return MM_FRAME_EMPTY;
 
+        /* If this page is getting allocated again, don't overwrite it */
+        if (pt->present == 1 || pt->available == PT_TO_ALLOC) {
+                heap_break += MM_PF_SIZE;
+                return ret;
+        }
+
         pt->address = 0;
         /* Don't actually map page until something writes to it */
         pt->present = 0;
         pt->rw = 1;
+        pt->pcd = 1;
         pt->available = PT_TO_ALLOC;
 
         heap_break += MM_PF_SIZE;
@@ -516,9 +526,36 @@ void MMU_free_page(void * page)
         page = (void *)((uint64_t)page & ~(MM_PF_SIZE - 1));
 
         if (page > heap_break) {
-                printk("cannot free unallocated heap space\n");
+                printk("MMU_free_page():cannot free unallocated heap space!\n");
+                return;
         }
 
-        printk("trying to free %ld pages from heap\n", (heap_break - page) / MM_PF_SIZE);
+        printk("trying to free %ld pages from heap\n",
+                (heap_break - page) / MM_PF_SIZE);
+
+        /*
+         * For now, just move the heap break back as the cache is breaking this
+        for (int i = 0; i < (heap_break - page) / MM_PF_SIZE; i++) {
+                void * current = heap_break - MM_PF_SIZE * (i + 1);
+                struct pt * pt;
+                printk("freeing page %p\n", current);
+
+                * Find the entry *
+                pt = resolve_virt_addr(p4_table, current);
+
+                if (pt->present && pt->available == 0) {
+                        * Free the page *
+                        MM_pf_free((void *)(pt->address & MM_ADDR_MASK));
+
+                        * Set up entry to be re-demand paged *
+                        pt->address = 0;
+                } else {
+                        printk("page was never paged\n");
+                }
+        }
+        */
+
+        heap_break = page;
+
         return;
 }
