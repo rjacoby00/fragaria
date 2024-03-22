@@ -21,12 +21,13 @@ static void output(char c)
         return;
 }
 
-static int print_hex(unsigned int x)
+static int print_hex(unsigned long int x)
 {
-        int i = 1, ret = 0;
+        long int i = 1;
+        int ret = 0;
 
         /* Calculate how many digits we're printing (log_16(x)) */
-        for (int j = x / 16; j > 0; j = j / 16)
+        for (long int j = x / 16; j > 0; j = j / 16)
                 i = i * 16;
 
         /* Print them in reverse order */
@@ -41,12 +42,13 @@ static int print_hex(unsigned int x)
         return ret;
 }
 
-static int print_unsigned(unsigned int u)
+static int print_unsigned(unsigned long int u)
 {
-        int i = 1, ret = 0;
+        long int i = 1;
+        int ret = 0;
 
         /* Calculate how many digits we're printing (log_10(u)) */
-        for (int j = u / 10; j > 0; j = j / 10)
+        for (long int j = u / 10; j > 0; j = j / 10)
                 i = i * 10;
         
         /* Print them in reverse order */
@@ -58,7 +60,7 @@ static int print_unsigned(unsigned int u)
         return ret;
 }
 
-static int print_decimal(int d)
+static int print_decimal(long int d)
 {
         int ret = 0;
 
