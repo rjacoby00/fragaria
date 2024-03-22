@@ -122,8 +122,6 @@ void kmain(uint32_t magic, struct multiboot_table_header * multiboot)
                 uint8_t ** arrays = kcalloc(256, sizeof(uint8_t *));
 
                 for (int i = 0; i < 256; i++) {
-                        printk("%d\n", i);
-
                         arrays[i] = kmalloc(100);
 
                         for (int j = 0; j < 100; j++) {
@@ -131,16 +129,59 @@ void kmain(uint32_t magic, struct multiboot_table_header * multiboot)
                         }
                 }
 
+                /* Test and free every-other array */
                 for (int i = 0; i < 256; i++) {
                         for (int j = 0; j < 100; j++) {
                                 if (arrays[i][j] != i)
                                         printk("kmalloc error\n");
                         }
 
+                        if (i % 2 == 0)
+                                kfree(arrays[i]);
+                }
+
+                /* Make some bigger and smaller */
+                for (int i = 0; i < 256; i++) {
+                        if (i % 2 == 0) {
+                                if (i % 4 == 0) {
+                                        arrays[i] = kmalloc(10);
+                                } else {
+                                        arrays[i] = kmalloc(200);
+                                }
+                        }
+
+                        /* Write a new value */
+                        for (int j = 0; j < 10; j++) {
+                                arrays[i][j] = (i * 10) % 255;
+                        }
+                }
+
+                for (int i = 0; i < 256; i++) {
+                        for (int j = 0; j < 10; j++) {
+                                if (arrays[i][j] != (i * 10) % 255)
+                                        printk("kmalloc error!\n");
+                        }
+
                         kfree(arrays[i]);
                 }
 
                 kfree(arrays);
+        }
+
+        /* Huge allocation (1 MB) */
+        {
+                uint64_t * ptr = kcalloc(131072, sizeof(uint64_t));
+
+                for (int i = 0; i < 131072; i++) {
+                        ptr[i] = i;
+                }
+
+                for (int i = 0; i < 131072; i++) {
+                        if (ptr[i] != i)
+                                printk("kmalloc error!\n");
+                }
+
+                kfree(ptr);
         }
 
         /* Unmask keyboard */

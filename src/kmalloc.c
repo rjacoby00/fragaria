@@ -100,25 +100,16 @@ static struct malloc_header * get_block(size_t size)
 {
         struct malloc_header * current = head;
 
-        printk("MALLOC: finding block\n");
-
         /* Traverse the list, stop on the last block */
         for(current = head; current->next; current = current->next) {
-                printk("MALLOC: checking header\n");
-                print_header(current);
-
                 if(current->status == FREE && current->size >= size) {
                         /* We've found a block to put our data in */
-                        printk("MALLOC: found block\n");
-
                         return current;
                 }
         }
 
         if(current->status == FREE && current->size >= size) {
                 /* The last block will fit our data */
-                printk("MALLOC: found block\n");
-
                 return current;
         }
 
@@ -159,8 +150,6 @@ static struct malloc_header * find_header(void * ptr)
 {
         struct malloc_header * current;
 
-        printk("MALLOC: finding header for pointer %p\n", ptr);
-
         for(current = head; current; current = current->next) {
                 /* Check if the current header's block contains ptr */
                 if((uintptr_t)ptr >= (uintptr_t)current->start && 
@@ -192,10 +181,6 @@ void * kcalloc(size_t nmeb, size_t size)
         for(i = 0; i < nmeb * size; i++)
                 ((uint8_t *)ptr)[i] = 0;
 
-        printk("MALLOC: calloc(%lu, %lu)\t\t=> (ptr=%p, size=%lu)\n", nmeb,
-                size, (void *) ptr, nmeb * size);
-
-
         return ptr;
 }
 
@@ -210,8 +195,6 @@ void * kmalloc(size_t size)
         struct malloc_header * current;
 
         if(!top) kmalloc_init();
-
-        printk("MALLOC: malloc(%lu)\n", size);
 
         /* Find a canidate header */
         current = get_block(size);
@@ -255,16 +238,7 @@ void * kmalloc(size_t size)
                 current->size = size
                         + MALLOC_ALIGNMENT
                         - (size % MALLOC_ALIGNMENT);
-
-                printk("MALLOC: current header:\n");
-                print_header(current);
-
-                printk("MALLOC: new header:\n");
-                print_header(new_header);
         }
-
-        printk("MALLOC: malloc(%lu)\t\t=> (ptr=%p, size=%lu)\n", size,
-                (void *) current, current->size);
 
         return current->start;
 }
@@ -292,8 +266,6 @@ void kfree(void * ptr)
         /* Init library if not already done */
         if(!top)
                 kmalloc_init();
-
-        printk("MALLOC: free(%p)", ptr);
 
         /* Find the header that corresponds to the block requested */
         current = find_header(ptr);
@@ -386,9 +358,6 @@ void * krealloc(void * ptr, size_t size)
 
         /* If they asked for the same size, we don't have to do anything */
         if(size == current->size) {
-                printk("MALLOC: realloc(%p, %lu)\t=> (ptr=%p, size=%lu)", ptr,
-                        size, (void *)current, current->size);
-
                 return current->start;
         }
 
@@ -468,16 +437,7 @@ void * krealloc(void * ptr, size_t size)
                                 printk("MALLOC: new last block:\n");
                                 print_header(new_header);
                         }
-
-                        printk("MALLOC: shrunk header:\n");
-                        print_header(current);
-
-                        printk("MALLOC: new header:\n");
-                        print_header(new_header);
                 }
-
-                printk("MALLOC: realloc(%p, %lu)\t=> (ptr=%p, size=%lu)", ptr,
-                        size, (void *)current, current->size);
 
                 
                 /* Return the begnning of the shrunk data block */
@@ -527,11 +487,6 @@ void * krealloc(void * ptr, size_t size)
                                         + MALLOC_ALIGNMENT
                                         - (size % MALLOC_ALIGNMENT);
 
-                                printk("MALLOC: expanded header:\n");
-                                print_header(current);
-
-                                printk("MALLOC: new header:\n");
-                                print_header(new_header);
                         } else {
                                 /* We cannot fit a free block */
 
@@ -539,10 +494,6 @@ void * krealloc(void * ptr, size_t size)
                                         + HEADER_ALIGNED_SIZE;
                                 current->next = current->next->next;
                         }
-
-                        printk("MALLOC: realloc(%p, %lu)\t=> "\
-                                "(ptr=%p, size=%lu)", ptr, size,
-                                (void *)current, current->size);
 
                         return current->start;
 
@@ -559,8 +510,6 @@ void * krealloc(void * ptr, size_t size)
                         void * new_mem;
                         int i;
 
-                        printk("MALLOC: copying to bigger block\n");
-
                         /* Get a block big enough */
                         new_mem = kmalloc(size);
 
@@ -573,10 +522,6 @@ void * krealloc(void * ptr, size_t size)
                                         ((uint8_t *)current->start)[i];
 
                         kfree(current);
-
-                        printk("MALLOC: realloc(%p, %lu)\t=> "\
-                                "(ptr=%p, size=%lu)", ptr, size,
-                                (void *)new_mem, size);
 
                         return new_mem;
                 }
